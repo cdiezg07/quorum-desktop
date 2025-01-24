@@ -1,16 +1,6 @@
-import React, {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faPlus,
-  faUsers,
-  faX,
-} from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faUsers, faX, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { usePasskeysContext } from '@quilibrium/quilibrium-js-sdk-channels';
 import './Channel.scss';
 import { EmbedMessage, Message as MessageType } from '../../api/quorumApi';
@@ -38,15 +28,19 @@ const Channel: React.FC<ChannelProps> = ({ spaceId, channelId }) => {
     spaceId: spaceId,
     channelId: channelId,
   });
+  // const { data: messagesSpace } = useMessages({ spaceId });
   const queryClient = useQueryClient();
   const user = usePasskeysContext();
   const [pendingMessage, setPendingMessage] = useState('');
   const [showUsers, setShowUsers] = useState(false);
+  const [showMessages, setshowMessages] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [messagesSearched, setMessagesSearched] = useState<MessageType[]>([]); // Nuevo estado
   const [init, setInit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inReplyTo, setInReplyTo] = useState<MessageType>();
   const editor = useRef<HTMLTextAreaElement>(null);
-  const { submitChannelMessage } = useMessageDB();
+  const { submitChannelMessage, searchMessage } = useMessageDB();
   const { data: spaceMembers } = useSpaceMembers({ spaceId });
   const { data: isSpaceOwner } = useSpaceOwner({ spaceId });
   const [fileData, setFileData] = React.useState<ArrayBuffer | undefined>();
@@ -96,6 +90,14 @@ const Channel: React.FC<ChannelProps> = ({ spaceId, channelId }) => {
       })();
     }
   }, [acceptedFiles]);
+
+  const handleSearch = async () => {
+    console.log('Buscando:', searchText);
+    const messagesSearched = await searchMessage(spaceId, searchText);
+    
+    console.log('Numero de mensajes:', messagesSearched);
+    setMessagesSearched(messagesSearched);
+  };
 
   const members = useMemo(() => {
     return spaceMembers.reduce(
@@ -193,6 +195,29 @@ const Channel: React.FC<ChannelProps> = ({ spaceId, channelId }) => {
             {channel?.channelTopic && ' | '}
           </span>
           <span className="font-light text-sm">{channel?.channelTopic}</span>
+            <div className="relative inline-flex float-right h-4">
+            <input
+              type="text"
+              className="max-w-60 h-6 p-2 pr-10 bg-gray-700 text-white rounded-md focus:outline-none"
+              placeholder="Buscar..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSearch();
+                setshowMessages(true);
+              }
+              }}
+            />
+            <FontAwesomeIcon 
+              icon={faSearch}
+              className="w-3.5 p-1 absolute right-3 hover:bg-[rgba(255,255,255,0.2)] cursor-pointer"
+              onClick={() => {
+              handleSearch();
+              setshowMessages((prev) => !prev);
+              }}
+            />
+            </div>
           <span className="float-right h-4">
             {/* <FontAwesomeIcon onClick={() => {setShowUsers(false); setShowPins(prev => !prev);}} className="w-4 p-1 rounded-md cursor-pointer hover:bg-[rgba(255,255,255,0.2)]" icon={faMapPin}/> */}
             <FontAwesomeIcon
@@ -205,6 +230,27 @@ const Channel: React.FC<ChannelProps> = ({ spaceId, channelId }) => {
           </span>
         </div>
         <div
+          className={
+            'message-list' + (!showMessages ? ' message-list-expanded' : '')
+          }
+        >
+          <MessageList
+            isRepudiable={space?.isRepudiable}
+            roles={roles}
+            canDeleteMessages={canDeleteMessages}
+            isSpaceOwner={isSpaceOwner}
+            editor={editor}
+            messageList={messageList}
+            setInReplyTo={setInReplyTo}
+            customEmoji={space?.emojis}
+            members={members}
+            submitMessage={submit}
+            fetchPreviousPage={() => {
+              fetchPreviousPage();
+            }}
+          />
+        </div>
+        {/* <div
           className={
             'message-list' + (!showUsers ? ' message-list-expanded' : '')
           }
@@ -224,7 +270,10 @@ const Channel: React.FC<ChannelProps> = ({ spaceId, channelId }) => {
               fetchPreviousPage();
             }}
           />
-        </div>
+        </div> */}
+
+      
+       
         {(() => {
           if (inReplyTo) {
             return (
@@ -398,6 +447,7 @@ const Channel: React.FC<ChannelProps> = ({ spaceId, channelId }) => {
           ></div>
         </div>
       </div>
+    
       <div
         className={
           'w-[260px] bg-[#474046] p-3 overflow-scroll ' +
@@ -458,6 +508,30 @@ const Channel: React.FC<ChannelProps> = ({ spaceId, channelId }) => {
             </div>
           ))}
         </div>
+      </div>
+      <div
+        className={
+          'w-[260px] bg-[#474046] p-3 overflow-scroll ' +
+          (showMessages ? '' : 'hidden')
+        }
+      >
+        
+        <div className="flex flex-col mb-2">
+          <div className="font-semibold ml-[1pt] mb-1 text-xs">
+            {channel?.channelName.toUpperCase()}
+          </div>
+        </div>
+        
+        {messagesSearched
+          .map((m) => {
+            return (
+              <div className="flex flex-col mb-2" key={'message-' + m.messageId}>
+                <div className="font-semibold ml-[1pt] mb-1 text-xs">
+                  {m.content.text.toUpperCase()}
+                </div>
+              </div>
+            );
+          })}
       </div>
     </div>
   );

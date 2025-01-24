@@ -112,6 +112,10 @@ type MessageDBContextValue = {
     },
     inReplyTo?: string
   ) => Promise<void>;
+  searchMessage: (
+    spaceId: string,
+    messageId: string
+  ) => Promise<Message[]>;
   getConfig: ({
     address,
     userKey,
@@ -208,6 +212,23 @@ const MessageDBProvider: FC<MessageDBContextProps> = ({ children }) => {
   const spaceInfo = useRef<{
     [spaceId: string]: secureChannel.SpaceRegistration;
   }>({});
+
+  const searchMessage = async (
+    spaceId: string,
+    message?: string
+  ) => {
+    let { messages } = await messageDB.getMessages({
+      spaceId: spaceId,
+      limit: 100000,
+    });
+    //Hacer busqueda con el mensaje que recibimos
+    console.log('messages', messages);
+    return messages.filter(
+      (m) =>
+        m.content.type === 'post' &&
+        (m.content as PostMessage).text.includes(message)
+    );
+  };
 
   const saveMessage = async (
     decryptedContent: Message,
@@ -4329,6 +4350,7 @@ const MessageDBProvider: FC<MessageDBContextProps> = ({ children }) => {
         updateSpace,
         createChannel,
         submitChannelMessage,
+        searchMessage,
         getConfig,
         saveConfig,
         setSelfAddress,
@@ -4355,6 +4377,7 @@ const MessageDBContext = createContext<MessageDBContextValue>({
   updateSpace: () => undefined as never,
   createChannel: () => undefined as never,
   submitChannelMessage: () => undefined as never,
+  searchMessage: () => undefined as never,
   getConfig: () => undefined as never,
   saveConfig: () => undefined as never,
   setSelfAddress: (_) => {},

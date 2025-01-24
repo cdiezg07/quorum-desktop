@@ -180,7 +180,7 @@ export class MessageDB {
     limit = 100,
   }: {
     spaceId: string;
-    channelId: string;
+    channelId?: string;
     cursor?: number;
     direction?: 'forward' | 'backward';
     limit?: number;
@@ -198,10 +198,23 @@ export class MessageDB {
       let range: IDBKeyRange;
       if (!cursor) {
         // Initial load - get latest messages
-        range = IDBKeyRange.bound(
-          [spaceId, channelId, 0],
-          [spaceId, channelId, Number.MAX_VALUE]
-        );
+        if (!channelId) {
+          console.log('getting all messages');
+          range = IDBKeyRange.bound(
+            [spaceId, '\u0000', 0],
+            [spaceId, '\uffff', Number.MAX_VALUE]
+          );
+          console.log('range', range);
+        } else {
+          console.log('getting all messages');
+          range = IDBKeyRange.bound(
+            [spaceId, channelId, 0],
+            [spaceId, channelId, Number.MAX_VALUE]
+          );
+          console.log('range', range);
+
+        }
+
       } else if (direction === 'forward') {
         // Get messages newer than cursor
         range = IDBKeyRange.bound(
