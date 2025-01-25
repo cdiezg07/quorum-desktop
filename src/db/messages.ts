@@ -424,7 +424,7 @@ export class MessageDB {
   async getConversations({
     type,
     cursor,
-    limit = 200,
+    limit = 1000,
   }: {
     type: 'direct' | 'group';
     cursor?: number;
@@ -666,9 +666,7 @@ export class MessageDB {
     });
   }
 
-  async getSpaceKeys(
-    spaceId: string
-  ): Promise<
+  async getSpaceKeys(spaceId: string): Promise<
     {
       address?: string;
       spaceId: string;
