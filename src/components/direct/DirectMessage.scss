@@ -52,6 +52,10 @@
   transition: width 200ms;
 }
 
+.message-list-search {
+  width: calc(100vw - 742px);
+}
+
 .message-list-expanded {
   width: calc(100vw - 322px);
 }

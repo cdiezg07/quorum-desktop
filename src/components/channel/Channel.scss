@@ -57,6 +57,10 @@
   width: calc(100vw - 322px);
 }
 
+// .message-list-search-expanded {
+//   width: calc(100vw - 782px);
+// }
+
 .message-list::-webkit-scrollbar {
   width: 0; /* Remove scrollbar space */
   background: transparent; /* Optional: just make scrollbar invisible */
@@ -115,3 +119,4 @@
     color: rgba(255, 235, 255, 0.6);
   }
 }
+
